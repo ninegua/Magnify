@@ -1,6 +1,5 @@
-import magnify from 'ic:canisters/magnify';
-import "./styles.css"
-import { CanisterId } from '@dfinity/agent';
+import { magnify } from '../../declarations/magnify';
+import { Principal } from '@dfinity/principal';
 
 
 //0. PREP WORK & WORK AROUNDS
@@ -16,7 +15,7 @@ document.head.appendChild(link);
 
 // Sadness :(
 // We have to do this as a work-around because there is a bug in Candid currently
-const principalFromHex = hex => CanisterId.fromHex(hex)
+const principalFromHex = hex => Principal.fromHex(hex)
 
 //1. HTML FOR THE FRONT-END
 // Note that the HTML is a string... that is because (for security reasons) we can only have index.js
