@@ -1,6 +1,37 @@
-import { magnify } from '../../declarations/magnify';
+import { Ed25519KeyIdentity } from "@dfinity/identity";
+import { Actor, HttpAgent } from "@dfinity/agent";
+import {
+  idlFactory as magnify_idl,
+  canisterId as magnify_id,
+} from '../../declarations/magnify';
 import { Principal } from '@dfinity/principal';
 
+function newIdentity() {
+  const entropy = crypto.getRandomValues(new Uint8Array(32));
+  const identity = Ed25519KeyIdentity.generate(entropy);
+  localStorage.setItem("magnify_id", JSON.stringify(identity));
+  return identity;
+}
+
+function readIdentity() {
+  const stored = localStorage.getItem("magnify_id");
+  if (!stored) {
+    return newIdentity();
+  }
+  try {
+    return Ed25519KeyIdentity.fromJSON(stored);
+  } catch (error) {
+    console.log(error);
+    return newIdentity();
+  }
+}
+const identity = readIdentity();
+const player_id = identity.getPrincipal().toText();
+const agent = new HttpAgent({ identity });
+const magnify = Actor.createActor(magnify_idl, {
+  agent,
+  canisterId: magnify_id,
+});
 
 //0. PREP WORK & WORK AROUNDS
 // This is ergonomic short-hand so we do not need to have to keep writing "document.."
@@ -12,10 +43,6 @@ link.setAttribute('rel', 'stylesheet');
 link.setAttribute('type', 'text/css');
 link.setAttribute('href', 'https://fonts.googleapis.com/css2?family=Comic+Neue&family=Parisienne&display=swap');
 document.head.appendChild(link);
-
-// Sadness :(
-// We have to do this as a work-around because there is a bug in Candid currently
-const principalFromHex = hex => Principal.fromHex(hex)
 
 //1. HTML FOR THE FRONT-END
 // Note that the HTML is a string... that is because (for security reasons) we can only have index.js
@@ -96,10 +123,10 @@ let pollForAdditionsTimer
 //2. Bob answers Alice's offer
 //3. Alice and Bob are now connected
 const sendOffer = (recipient, alias) => {
-  console.log(`Sending offer to ${recipient._idHex}`)
+  console.log(`Sending offer to ${recipient.toText()}`)
   
   setupPeerAndComplete(remote => {
-    remote.idHex = recipient._idHex
+    remote.idHex = recipient.toText()
     remote.label.innerText = alias
     remote.rtcPeerConnection.createOffer().then(offer => {
       return remote.rtcPeerConnection.setLocalDescription(offer)
@@ -119,7 +146,7 @@ const sendOffer = (recipient, alias) => {
       magnify.answers(activeRoom).then(answers => {
         console.log(`Found ${answers.length} answers on the canister`)
         for (const answer of answers) {
-          if (answer.offer.recipient._idHex === recipient._idHex) {
+          if (answer.offer.recipient.toText() === recipient.toText()) {
             var details = JSON.parse(answer.answer)
             remote.rtcPeerConnection.setRemoteDescription(details.description)
             addRemoteIceCandidates(details.ice, remote.rtcPeerConnection)
@@ -136,10 +163,10 @@ const sendOffer = (recipient, alias) => {
 //This function is used only on existing offers. Once a user accepts an offer, then they will
 //be connected via WebRTC for video chat. They will not be connected until the offer is answered.
 const sendAnswer = (offer) => {
-  console.log(`sending answer to ${offer.initiator._idHex}`);
+  console.log(`sending answer to ${offer.initiator.toText()}`);
 
   setupPeerAndComplete(remote => {
-    remote.idHex = offer.initiator._idHex
+    remote.idHex = offer.initiator.toText()
 
     var details = JSON.parse(offer.offer)
     remote.rtcPeerConnection.setRemoteDescription(details.description)
@@ -147,7 +174,7 @@ const sendAnswer = (offer) => {
 
     // Set the name of the remote participant
     magnify.participants(activeRoom).then(participants => {
-      remote.label.innerText = participants[0].find(p => p.principal._idHex === offer.initiator._idHex).alias
+      remote.label.innerText = participants[0].find(p => p.principal.toText() === offer.initiator.toText()).alias
     })
 
     remote.rtcPeerConnection.createAnswer().then(answer => {
@@ -185,8 +212,8 @@ function checkForAdditions() {
   // Check whether we should be sending an offer
   magnify.participants(activeRoom).then(participants => {
     for (const participant of participants[0]) {
-      if (!remotes.some(remote => remote.idHex === participant.principal._idHex) && participant.principal._idHex != callerId) {
-        console.log(`Sending an offer to ${participant.alias} (${participant.principal._idHex})`)
+      if (!remotes.some(remote => remote.idHex === participant.principal.toText()) && participant.principal.toText() != callerId) {
+        console.log(`Sending an offer to ${participant.alias} (${participant.principal.toText()})`)
         sendOffer(participant.principal, participant.alias)
       }
     }
@@ -279,9 +306,9 @@ function refreshRooms(rooms) {
   rooms.forEach(room => {
     const newLi = document.createElement("li")
     newLi.className = "room-item"
-    newLi.textContent = `${room._1_} (${room._0_})`;
+    newLi.textContent = `${room[1]} (${room[0]})`;
     newLi.addEventListener("click", () => {
-        activeRoom = room._0_
+        activeRoom = room[0]
         setupVideoPage()
       })
     ul.appendChild(newLi);
@@ -301,7 +328,7 @@ function setupWelcomePage() {
   const newRoomUser = $("#newRoomUser")
 
   roomPollingInterval = setInterval(() => {
-    magnify.listRooms().then(rooms => refreshRooms(rooms))
+    magnify.listRooms().then(refreshRooms)
   }, 2000);
 
   createButton.addEventListener("click", ev => {
@@ -338,12 +365,12 @@ function setupVideoPage() {
     })
     // Find my own nickname and set label accordingly
     magnify.participants(activeRoom).then(participants => {
-      $("#mylabel").innerText = participants[0].find(p => p.principal._idHex === callerId).alias
+      $("#mylabel").innerText = participants[0].find(p => p.principal.toText() === callerId).alias
     })
   })
 
   inviteButton.addEventListener("click", ev => {
-    sendOffer(principalFromHex(invitePrincipal.value), inviteName.value)
+    sendOffer(Principal.fromText(invitePrincipal.value), inviteName.value)
   })
 }
 
@@ -353,9 +380,9 @@ let roomsP = magnify.listRooms()
 setupWelcomePage()
 callerP.then(caller => 
   roomsP.then(rooms => {
-      console.log(`fetched the caller ID: ${caller._idHex}`);
       //add it to the local variables (for easier retrieval in the front-end)
-      callerId = caller._idHex;
+      callerId = caller.toText();
       $("#principalDisplay").innerText = callerId;
+      console.log(`fetched the caller ID: ${callerId}, Rooms: ${rooms}`);
       refreshRooms(rooms)
 }))

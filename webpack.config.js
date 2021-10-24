@@ -64,7 +64,7 @@ module.exports = {
   },
   output: {
     filename: "index.js",
-    path: path.join(__dirname, "dist", "magnify"),
+    path: path.join(__dirname, "dist", "magnify_assets"),
   },
 
   // Depending in the language or framework you are using for
@@ -93,7 +93,7 @@ module.exports = {
     }),
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'development',
-      HELLO083_CANISTER_ID: canisters["magnify"]
+      MAGNIFY_CANISTER_ID: canisters["magnify"]
     }),
     new webpack.ProvidePlugin({
       Buffer: [require.resolve("buffer/"), "Buffer"],

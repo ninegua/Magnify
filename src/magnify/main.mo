@@ -40,6 +40,10 @@ actor {
     //2.1 A List of offers which have not been accepted
     flexible var openOffers : List.List<Offer> = List.nil();
 
+    public func allOffers() : async List.List<Offer> {
+      openOffers
+    };
+
     //2.2 A List of acceptances
     flexible var acceptances : List.List<Answer> = List.nil();
 
@@ -147,7 +151,7 @@ actor {
                 } 
             })
         };
-
+        
         openOffers := List.push({
             roomId = room;
             initiator = caller;

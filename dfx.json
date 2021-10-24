@@ -8,8 +8,12 @@
       "dependencies": [
         "magnify"
       ],
+      "frontend": {
+        "entrypoint": "src/magnify_assets/src/index.html"
+      },
       "source": [
-        "src/magnify_assets/assets"
+        "src/magnify_assets/assets",
+        "dist/magnify_assets/"
       ],
       "type": "assets"
     }
