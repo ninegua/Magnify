@@ -15,7 +15,7 @@ Before you build, deploy, and run the Magnify application, verify the following:
     To download and install the supported version of the DFINITY Canister SDK, run the following command:
 
     ```bash
-    DFX_VERSION=0.5.8 sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+    sh -ci "$(curl -fsSL https://smartcontracts.org/install.sh)"
     ```
 
 ## Clone the Magnify repository
@@ -27,7 +27,13 @@ To experiment with the Magnify sample application:
 1. Clone the `Magnify` repository.
 
     ```bash
-    git clone https://github.com/Dfinity-Bjoern/Magnify
+    git clone https://github.com/ninegua/Magnify
+    ```
+
+    or
+
+    ```bash
+    git clone git@github.com:ninegua/Magnify.git
     ```
 
 1. Change to the local working directory for the `Magnify` repository.
@@ -65,12 +71,43 @@ To connect to the network running locally:
 
 To build and deploy Magnify:
 
-1. In the second terminal, build the executable by running the following command:
+1. In the second terminal, first create the canisters. This creates empty canisters and determines their canister ids.
+
+    ```bash
+    dfx canister create magnify_assets
+    dfx canister create magnify
+    ```
+
+    You should see output similar to the following:
+
+    ```bash
+    Creating a wallet canister on the local network.
+    The wallet canister on the "local" network for user "default" is "rwlgt-iiaaa-aaaaa-aaaaa-cai"
+    Creating canister "magnify_assets"...
+    "magnify_assets" canister created with canister id: "rrkah-fqaaa-aaaaa-aaaaq-cai"
+    ```
+
+    and
+
+    ```bash
+    Creating canister "magnify"...
+    "magnify" canister created with canister id: "ryjl3-tyaaa-aaaaa-aaaba-cai"
+    ```
+
+1. Build the executable by running the following command:
 
     ```bash
     dfx build
     ```
-1. Deploy Msgnify on the local network by running the following command:
+
+    You should see output similar to the following:
+
+    ```bash
+    Building canisters...
+    Building frontend...
+    ```
+
+1. Deploy Magnify on the local network by running the following command:
 
     ```bash
     dfx canister install --all
@@ -79,8 +116,10 @@ To build and deploy Magnify:
     You should see output similar to the following:
 
     ```bash
-    Installing code for canister magnify, with canister_id ic:05000000000000000000000000000000000185
-    Installing code for canister magnify_assets, with canister_id ic:060000000000000000000000000000000001FB
+    Creating UI canister on the local network.
+    The UI canister on the "local" network is "r7inp-6aaaa-aaaaa-aaabq-cai"
+    Installing code for canister magnify, with canister_id ryjl3-tyaaa-aaaaa-aaaba-cai
+    Installing code for canister magnify_assets, with canister_id rrkah-fqaaa-aaaaa-aaaaq-cai
     ```
 
 1. Copy the canister identifier for the `+magnify_assets+` canister to the clipboard or a notepad application.
@@ -89,15 +128,7 @@ To build and deploy Magnify:
 
 To open Magnify in a browser:
 
-1. Open a browser tab and navigate to the default host name and port, localhost:8000 or 127.0.0.1:8000.
-
-1. Add `+/?canisterId=+` and paste the canister identifier for `+magnify_assets+` to complete the URL.
-
-    For example, the full URL should look similar to the following:
-
-    ```bash
-    http://localhost:8000/?canisterId=ic:060000000000000000000000000000000001FB
-    ```
+1. Open a browser tab and navigate to the URL `http://localhost:8080/?canisterId=r7inp-6aaaa-aaaaa-aaabq-cai` where `r7inp-6aaaa-aaaaa-aaabq-cai` is the canister id of the UI canister.
 
 1. Create a room and invite others to join you in the conference.
 
@@ -113,10 +144,9 @@ There are really only four files that an application developer would touch:
 
 2. Frontend:   
 
-    a. The frontend (UX) is in the JavaScript file `src/manify_assets/public/index.js`  
+    a. The frontend (UX) is in the JavaScript file `src/manify_assets/src/index.js`  
 
-    b. The Styling of the UX is in the CSS file `src/manify_assets/public/styles.css`  
-
+    b. The Styling of the UX is in the CSS file `src/manify_assets/assets/styles.css`  
 
 ## Background information
 
